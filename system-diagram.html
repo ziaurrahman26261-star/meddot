@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>School Management SaaS — Full System Diagram</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<style>
+  :root { --line: #d8dee6; --muted: #64748b; --accent: #2563eb; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: #ffffff; color: #0f172a;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+    line-height: 1.55;
+  }
+  header { border-bottom: 1px solid var(--line); padding: 28px 24px 22px; background: #f8fafc; }
+  header h1 { margin: 0 0 6px; font-size: 26px; }
+  header p { margin: 0; color: var(--muted); max-width: 900px; font-size: 15px; }
+  main { max-width: 1200px; margin: 0 auto; padding: 28px 24px 60px; }
+  section { margin-top: 40px; }
+  section h2 {
+    font-size: 20px; margin: 0 0 4px; padding-left: 12px;
+    border-left: 4px solid var(--accent);
+  }
+  section .sub { color: var(--muted); font-size: 14px; margin: 0 0 18px; padding-left: 12px; }
+  .diagram {
+    border: 1px solid var(--line); border-radius: 12px; padding: 16px;
+    background: #ffffff; overflow: auto;
+    box-shadow: 0 1px 3px rgba(15,23,42,.06);
+  }
+  .diagram .mermaid { min-width: 640px; }
+  .note {
+    margin-top: 12px; font-size: 13.5px; color: var(--muted);
+    background: #f8fafc; border: 1px solid var(--line);
+    border-radius: 8px; padding: 10px 14px;
+  }
+  table { border-collapse: collapse; width: 100%; margin-top: 10px; font-size: 14px; }
+  th, td { border: 1px solid var(--line); padding: 9px 12px; text-align: left; vertical-align: top; }
+  th { background: #f1f5f9; font-weight: 600; }
+  footer {
+    border-top: 1px solid var(--line); margin-top: 56px; padding-top: 18px;
+    color: var(--muted); font-size: 13px; text-align: center;
+  }
+  @media print { header { border-bottom: 1px solid #000; } .diagram { border: 1px solid #000; } }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>School Management SaaS — Full System Diagram</h1>
+  <p>
+    The complete picture of the system: people, app, security guard, records room,
+    automatic jobs, watchdogs, and the safe. Diagrams below: (1) the full system,
+    (2) what happens automatically and when, (3) how the data fits together.
+  </p>
+</header>
+
+<main>
+
+  <!-- ============ DIAGRAM 1: FULL SYSTEM ============ -->
+  <section>
+    <h2>1. The Full System</h2>
+    <p class="sub">Every part, from the people at the door to the nightly copies in the safe. Drawn and explained line by line in <code>AUTOMATION.md</code>.</p>
+    <div class="diagram">
+      <pre class="mermaid">
+flowchart TB
+    subgraph S1["1. THE PEOPLE"]
+        U1["School Admins"]
+        U2["Teachers"]
+        U3["Parents"]
+    end
+
+    subgraph S2["2. FRONT DOOR (Vercel edge + CDN)"]
+        E1["SSL + security headers"]
+        E2["Fast delivery of pages"]
+    end
+
+    subgraph S3["3. THE OFFICE (Next.js app)"]
+        A1["Pages (server components)"]
+        A2["Buttons / forms (server actions)"]
+        A3["Notice board (cache, 60s)"]
+        A4["Middleware (session check)"]
+    end
+
+    subgraph S4["4. SECURITY GUARD (Supabase Auth)"]
+        G1["Login + passwords"]
+        G2["Rate limit + lockout"]
+        G3["ID card (JWT: role + school_id)"]
+    end
+
+    subgraph S5["5. RECORDS ROOM (PostgreSQL)"]
+        D1["21 tables, school_id on every row"]
+        D2["Drawer locks (RLS policies)"]
+        D3["Reflexes (triggers)"]
+        D4["One-form moves (RPC functions)"]
+        D5["Rules (unique constraints, generated columns)"]
+    end
+
+    subgraph S6["6. AUTOMATIC JOBS"]
+        J1["Nightly backup to the safe"]
+        J2["Cron: fee snapshots + retention"]
+        J3["Notice board refresh (60s)"]
+        J4["App checks for updates (30-60s)"]
+    end
+
+    subgraph S7["7. WATCHDOGS"]
+        W1["Sentry (catches errors)"]
+        W2["UptimeRobot (wakes us if down)"]
+        W3["Usage meters (cost checks)"]
+    end
+
+    subgraph S8["8. THE SAFE (Backblaze B2)"]
+        B1["Encrypted backup copies"]
+    end
+
+    subgraph S9["9. THE ROBOT (CI/CD)"]
+        R1["Tests every change before it goes live"]
+    end
+
+    S1 --> S2
+    S2 --> S3
+    S3 --> S4
+    S3 --> S5
+    S4 --> S5
+    S5 --> S6
+    S6 --> S8
+    S7 -. "watches" .-> S3
+    S7 -. "watches" .-> S5
+    R1 -. "deploys" .-> S3
+      </pre>
+    </div>
+    <div class="note">
+      <strong>One-line story:</strong> People (1) enter through the front door (2) into the office (3). The guard (4) stamps their ID card, and the office asks the records room (5) — which locks every drawer by school and role. Automatic jobs (6) keep data fresh and safe (8); watchdogs (7) alert us the moment anything breaks; the robot (9) tests every change before it can hurt the live system.
+    </div>
+  </section>
+
+  <!-- ============ DIAGRAM 2: AUTOMATION TIMELINE ============ -->
+  <section>
+    <h2>2. What Happens Automatically — and When</h2>
+    <p class="sub">Four time scales: every single action, every minute, every night, every quarter. Full list in <code>AUTOMATION.md</code> section 4.</p>
+    <div class="diagram">
+      <pre class="mermaid">
+flowchart LR
+    subgraph E["EVERY ACTION (instant, inside the database)"]
+        A1["Drawer locks check the ID card"]
+        A2["Register book writes itself (audit)"]
+        A3["Fee balance recalculates"]
+        A4["Duplicates refused by rules"]
+        A5["Archived years stay sealed"]
+    end
+
+    subgraph M["EVERY MINUTE (while the app is open)"]
+        B1["App checks for updates (30-60s)"]
+        B2["Notice board refreshes (60s)"]
+        B3["UptimeRobot pings the health page (5 min)"]
+    end
+
+    subgraph N["EVERY NIGHT (while everyone sleeps)"]
+        C1["Backup job copies everything to the safe"]
+        C2["Fee snapshot written"]
+        C3["Usage meters read (email at 80%)"]
+    end
+
+    subgraph Q["EVERY QUARTER"]
+        D1["Restore drill: practice rebuilding from the safe"]
+    end
+
+    E --> M
+    M --> N
+    N --> Q
+      </pre>
+    </div>
+    <div class="note">
+      <strong>Key idea:</strong> the things that must never fail — isolation, accurate math, backups, alerts — are on timers and triggers, never on memory.
+    </div>
+  </section>
+
+  <!-- ============ DIAGRAM 3: DATA MAP ============ -->
+  <section>
+    <h2>3. How the Data Fits Together</h2>
+    <p class="sub">The records room in one picture: 21 tables, their relationships, and the special rules that make mistakes impossible. Full DDL in <code>SYSTEM-DESIGN.md</code> section 6.</p>
+    <div class="diagram">
+      <pre class="mermaid">
+erDiagram
+    SCHOOLS ||--o{ USERS : has
+    SCHOOLS ||--o{ SESSIONS : has
+    SCHOOLS ||--o{ TEACHERS : has
+    SCHOOLS ||--o{ STUDENTS : has
+    SESSIONS ||--o{ CLASSES : contains
+    CLASSES ||--o{ SUBJECTS : has
+    CLASSES ||--o{ ENROLLMENTS : enrolls
+    STUDENTS ||--o{ ENROLLMENTS : has
+    SESSIONS ||--o{ ENROLLMENTS : spans
+    SUBJECTS ||--o{ TEACHER_ASSIGNMENTS : taught
+    TEACHERS ||--o{ TEACHER_ASSIGNMENTS : assigned
+    CLASSES ||--o{ TIMETABLE_ENTRIES : has
+    TEACHERS ||--o{ TIMETABLE_ENTRIES : teaches
+    CLASSES ||--o{ ATTENDANCE : records
+    STUDENTS ||--o{ ATTENDANCE : has
+    SUBJECTS ||--o{ MARKS_ENTRIES : assessed
+    MARKS_ENTRIES ||--o{ MARKS_RECORDS : contains
+    STUDENTS ||--o{ MARKS_RECORDS : scored
+    SUBJECTS ||--o{ DIARY_ENTRIES : has
+    STUDENTS ||--o{ FEE_VOUCHERS : owes
+    CLASSES ||--o{ FEE_VOUCHERS : batched
+    FEE_VOUCHERS ||--o{ FEE_PAYMENTS : paid
+    USERS ||--o{ PARENT_USERS : links
+    STUDENTS ||--o{ PARENT_USERS : linked
+    USERS ||--o{ AUDIT_LOGS : acts
+      </pre>
+    </div>
+    <div class="note">
+      <strong>Rules that never bend:</strong> a student has one class per session (enrollments), one attendance row per day (attendance), one batch voucher per class per month (fee_vouchers), one marks row per student per entry (marks_records), one timetable slot per class per day (timetable_entries). The database enforces all of these.
+    </div>
+  </section>
+
+  <!-- ============ TABLE: AUTO VS MANUAL ============ -->
+  <section>
+    <h2>4. Automatic vs Human — Who Does What</h2>
+    <p class="sub">The division of labor in one table (full version in <code>AUTOMATION.md</code> section 5).</p>
+    <table>
+      <tr><th>The system does by itself</th><th>A human must do</th></tr>
+      <tr><td>Lock every drawer on every request (school + role)</td><td>Decide to enroll a student (admin)</td></tr>
+      <tr><td>Write the register book for every change</td><td>Mark attendance (teacher)</td></tr>
+      <tr><td>Recalculate fee balances after each payment</td><td>Record a payment, set amounts and discounts (admin)</td></tr>
+      <tr><td>Refuse duplicates: attendance, vouchers, payments, marks, timetable slots</td><td>Decide promotion / demotion / repeat (admin)</td></tr>
+      <tr><td>Seal archived sessions against edits</td><td>Reset a password (admin)</td></tr>
+      <tr><td>Nightly encrypted backups + retention + usage alerts</td><td>Practice the restore drill (quarterly)</td></tr>
+      <tr><td>Catch errors, ping uptime, update dependencies</td><td>Investigate alerts and fix causes</td></tr>
+      <tr><td>Test every code change before deploy</td><td>Approve changes and set priorities</td></tr>
+    </table>
+  </section>
+
+</main>
+
+<footer>
+  School Management SaaS — diagram file. Companions: PRD.md, ARCHITECTURE.md, SYSTEM-DESIGN.md, AUTOMATION.md.
+  Note: the diagrams need an internet connection the first time they load (they are drawn by the mermaid.js library from a CDN).
+</footer>
+
+<script>
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: "default",
+    securityLevel: "strict",
+    flowchart: { useMaxWidth: true, curve: "basis", htmlLabels: true },
+    er: { useMaxWidth: true },
+    themeVariables: {
+      primaryColor: "#f1f5f9",
+      primaryBorderColor: "#2563eb",
+      primaryTextColor: "#0f172a",
+      lineColor: "#94a3b8",
+      clusterBkg: "#f8fafc",
+      clusterBorder: "#cbd5e1",
+      fontSize: "14px",
+    },
+  });
+</script>
+
+</body>
+</html>

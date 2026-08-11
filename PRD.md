@@ -25,7 +25,7 @@
 | 13 | **Schema additions** | Missing pieces | `payment_method`/`reference_no` on `fee_payments` (cash/cheque/bank); explicit `session_id` on `subjects`; uniqueness on timetable slots and marks records; **invite-token onboarding** (72 h, single-use) for the first admin; `users.id = auth.users.id` | Schools must record *how* money was paid; timetable conflicts and duplicate marks must be impossible; onboarding must never ship default passwords; app users must link to auth accounts by construction |
 | 14 | **Ops & security hardening** | Not addressed | CI/CD (GitHub Actions + Vercel preview deploys), SQL migrations in repo, 3 environments; Sentry + UptimeRobot + monthly usage reviews; RLS policy tests in CI; security headers; login rate limiting | Production-readiness v1 lacked: these prevent data loss, downtime, brute-force login, and surprise cloud bills |
 
-**How to read this document:** §2–§4 describe the corrected architecture and entity behavior in detail; §7 lists the corrected schema; §8–§10 cover security, cost, and backup requirements; §11 maps it all to build phases. Deep technical details (DDL, RLS policy inventory, trigger and RPC code, capacity math) live in `ARCHITECTURE.md` and stay in sync with this PRD.
+**How to read this document:** §2–§4 describe the corrected architecture and entity behavior in detail; §7 lists the corrected schema; §8–§10 cover security, cost, and backup requirements; §11 maps it all to build phases. For a plain-language explanation of how the whole system works (with a simple diagram, cost story, and a compact technical summary), read `ARCHITECTURE.md` — it stays in sync with this PRD.
 
 ---
 
